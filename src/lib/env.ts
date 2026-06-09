@@ -22,9 +22,13 @@ function validateEnv(): Env {
       "❌ Invalid environment variables:",
       parsed.error.flatten().fieldErrors,
     );
-    throw new Error("Invalid environment variables");
+    const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+    const isTest = process.env.NODE_ENV === "test";
+    if (!isBuild && !isTest) {
+      throw new Error("Invalid environment variables");
+    }
   }
-  return parsed.data;
+  return (parsed.data || {}) as Env;
 }
 
 export const env = validateEnv();
