@@ -46,6 +46,7 @@ export default function TrackerPage() {
                   : "hover:border-white/[0.12] hover:bg-white/[0.01]",
               )}
               aria-pressed={selectedCategory === key}
+              aria-label={`Select category: ${cat.label}`}
             >
               <EmojiIcon emoji={cat.icon} className="w-6 h-6 text-emerald-400 mb-1" />
               <span className="text-xs font-medium text-zinc-300">{cat.label}</span>

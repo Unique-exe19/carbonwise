@@ -3,7 +3,20 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { updateProfileSchema } from "@/lib/validations/schemas";
 
+/**
+ * Fetch profile settings for the currently authenticated user.
+ *
+ * @returns {Promise<{
+ *   error?: string;
+ *   success?: boolean;
+ *   name?: string;
+ *   email?: string | null;
+ *   dietType?: string;
+ *   transportMode?: string;
+ * }>} Response object containing status and user profile settings
+ */
 export async function getProfileSettings() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -44,6 +57,16 @@ export async function getProfileSettings() {
   }
 }
 
+/**
+ * Update profile settings (name, dietType, transportMode) for the authenticated user.
+ * Validates inputs using the Zod updateProfileSchema.
+ *
+ * @param {Object} data Update parameters
+ * @param {string} [data.name] User's full name
+ * @param {string} [data.dietType] Dietary preferences (e.g. VEGAN, VEGETARIAN, MIXED)
+ * @param {string} [data.transportMode] Default transportation mode (e.g. CAR, BICYCLE)
+ * @returns {Promise<{ error?: string; success?: boolean }>} Success status or error message
+ */
 export async function updateProfileSettings(data: {
   name?: string;
   dietType?: string;
@@ -56,12 +79,17 @@ export async function updateProfileSettings(data: {
 
   const userId = session.user.id;
 
+  const validated = updateProfileSchema.safeParse(data);
+  if (!validated.success) {
+    return { error: validated.error.issues[0].message };
+  }
+
   try {
-    // 1. Update user name
-    if (data.name !== undefined) {
+    // 1. Update user name if provided
+    if (validated.data.name !== undefined) {
       await prisma.user.update({
         where: { id: userId },
-        data: { name: data.name },
+        data: { name: validated.data.name },
       });
     }
 
@@ -69,13 +97,13 @@ export async function updateProfileSettings(data: {
     await prisma.userProfile.upsert({
       where: { userId },
       update: {
-        ...(data.dietType && { dietType: data.dietType }),
-        ...(data.transportMode && { transportMode: data.transportMode }),
+        ...(validated.data.dietType && { dietType: validated.data.dietType }),
+        ...(validated.data.transportMode && { transportMode: validated.data.transportMode }),
       },
       create: {
         userId,
-        dietType: data.dietType || "MIXED",
-        transportMode: data.transportMode || "CAR",
+        dietType: validated.data.dietType || "MIXED",
+        transportMode: validated.data.transportMode || "CAR",
       },
     });
 

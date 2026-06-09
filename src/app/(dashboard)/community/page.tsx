@@ -131,6 +131,7 @@ export default function CommunityPage() {
             "bg-gradient-to-r from-emerald-500 to-teal-600 text-white",
             "hover:brightness-110 shadow-lg shadow-emerald-500/20",
           )}
+          aria-label={showCreate ? "Close new post form" : "Open new post form"}
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">New Post</span>
@@ -142,38 +143,60 @@ export default function CommunityPage() {
         <div className="lg:col-span-2 space-y-4">
           {/* Create Post */}
           {showCreate && (
-            <motion.div
+            <motion.form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCreate();
+              }}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               className="card-base p-5"
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-zinc-100">Create Post</h3>
-                <button onClick={() => setShowCreate(false)} aria-label="Close" className="cursor-pointer text-zinc-450 hover:text-zinc-200">
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(false)}
+                  aria-label="Close create post form"
+                  className="cursor-pointer text-zinc-450 hover:text-zinc-200"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <input
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Title"
-                className="w-full px-4 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-650 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 mb-3"
-              />
-              <textarea
-                value={newContent}
-                onChange={(e) => setNewContent(e.target.value)}
-                placeholder="Share your eco journey..."
-                rows={3}
-                className="w-full px-4 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-650 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none mb-3"
-              />
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="post-title" className="sr-only">Title</label>
+                  <input
+                    id="post-title"
+                    type="text"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="Title"
+                    className="w-full px-4 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-650 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="post-content" className="sr-only">Share your eco journey</label>
+                  <textarea
+                    id="post-content"
+                    value={newContent}
+                    onChange={(e) => setNewContent(e.target.value)}
+                    placeholder="Share your eco journey..."
+                    rows={3}
+                    className="w-full px-4 py-2 rounded-xl text-sm bg-white/[0.03] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-650 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none"
+                    required
+                  />
+                </div>
+              </div>
               <button
-                onClick={handleCreate}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 cursor-pointer"
+                type="submit"
+                className="mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 cursor-pointer"
+                aria-label="Publish your post"
               >
                 <Send className="w-4 h-4" /> Post
               </button>
-            </motion.div>
+            </motion.form>
           )}
 
           {/* Posts */}
@@ -225,7 +248,7 @@ export default function CommunityPage() {
                         ? "text-red-400"
                         : "text-zinc-500 hover:text-red-400",
                     )}
-                    aria-label={post.isLiked ? "Unlike" : "Like"}
+                    aria-label={post.isLiked ? `Unlike post titled ${post.title}` : `Like post titled ${post.title}`}
                   >
                     <Heart
                       className={cn(
@@ -235,11 +258,17 @@ export default function CommunityPage() {
                     />
                     {post.likesCount}
                   </button>
-                  <button className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-emerald-450 transition-colors cursor-pointer">
+                  <button
+                    className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-emerald-450 transition-colors cursor-pointer"
+                    aria-label={`View ${post.commentsCount} comments on post titled ${post.title}`}
+                  >
                     <MessageCircle className="w-4 h-4" />
                     {post.commentsCount}
                   </button>
-                  <button className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-emerald-450 transition-colors cursor-pointer">
+                  <button
+                    className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-emerald-450 transition-colors cursor-pointer"
+                    aria-label={`Share post titled ${post.title}`}
+                  >
                     <Share2 className="w-4 h-4" />
                     Share
                   </button>
@@ -316,7 +345,10 @@ export default function CommunityPage() {
                       {group.members.toLocaleString()} members
                     </p>
                   </div>
-                  <button className="text-xs px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 font-medium hover:bg-emerald-500/20 transition-colors cursor-pointer">
+                  <button
+                    className="text-xs px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 font-medium hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                    aria-label={`Join group: ${group.name}`}
+                  >
                     Join
                   </button>
                 </div>

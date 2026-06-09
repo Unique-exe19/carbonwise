@@ -154,7 +154,9 @@ export async function seedDemoUserData(userId: string = "demo-user-id") {
         create: { userId: user.id, badgeId: streakBadge.id },
       });
     }
-    console.log("Demo user seeded successfully.");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Demo user seeded successfully.");
+    }
     return user;
   } catch (error) {
     console.error("Error seeding demo user data:", error);

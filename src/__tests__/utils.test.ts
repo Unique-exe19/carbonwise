@@ -6,6 +6,7 @@ import {
   percentage,
   getInitials,
   stringToColor,
+  debounce,
 } from "../lib/utils";
 
 describe("Utility helper functions", () => {
@@ -26,6 +27,10 @@ describe("Utility helper functions", () => {
   describe("formatCO2", () => {
     it("should display g for < 1kg CO2", () => {
       expect(formatCO2(0.5)).toBe("500g CO₂");
+    });
+
+    it("should display 0g for 0kg CO2", () => {
+      expect(formatCO2(0)).toBe("0g CO₂");
     });
 
     it("should display kg for normal amounts", () => {
@@ -55,6 +60,14 @@ describe("Utility helper functions", () => {
       expect(percentage(150, 100)).toBe(100);
       expect(percentage(50, 0)).toBe(0);
     });
+
+    it("should bound negative percentages to 0", () => {
+      expect(percentage(-50, 100)).toBe(0);
+    });
+
+    it("should bound percentages exceeding 100 to 100", () => {
+      expect(percentage(200, 100)).toBe(100);
+    });
   });
 
   describe("getInitials", () => {
@@ -68,6 +81,25 @@ describe("Utility helper functions", () => {
     it("should convert seed string to hsl", () => {
       const color = stringToColor("Eco");
       expect(color).toContain("hsl(");
+    });
+  });
+
+  describe("debounce", () => {
+    jest.useFakeTimers();
+
+    it("should debounce function calls", () => {
+      const func = jest.fn();
+      const debounced = debounce(func, 100);
+
+      debounced();
+      debounced();
+      debounced();
+
+      expect(func).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(100);
+
+      expect(func).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -8,6 +8,8 @@ import {
   calculateEmission,
   getEnvironmentalEquivalents,
   getSustainabilityScore,
+  getSubCategories,
+  getSubCategoryUnit,
 } from "../services/carbon-calculator";
 
 describe("Carbon Calculator Service", () => {
@@ -107,6 +109,34 @@ describe("Carbon Calculator Service", () => {
       const scoreData = getSustainabilityScore(50); // 50 kg (very high)
       expect(scoreData.score).toBeLessThanOrEqual(20);
       expect(scoreData.label).toBe("Needs Improvement");
+    });
+  });
+
+  describe("getSubCategoryUnit", () => {
+    it("should return correct unit for valid category and subcategory", () => {
+      expect(getSubCategoryUnit("TRAVEL", "car_petrol")).toBe("km");
+      expect(getSubCategoryUnit("FOOD", "beef")).toBe("kg");
+    });
+
+    it("should return fallback units for invalid category or subcategory", () => {
+      expect(getSubCategoryUnit("INVALID", "sub")).toBe("units");
+      expect(getSubCategoryUnit("TRAVEL", "invalid_sub")).toBe("units");
+    });
+  });
+
+  describe("getSubCategories", () => {
+    it("should return list of subcategories for valid category", () => {
+      const subs = getSubCategories("TRAVEL");
+      expect(subs.length).toBeGreaterThan(0);
+      expect(subs[0]).toHaveProperty("value");
+      expect(subs[0]).toHaveProperty("label");
+      expect(subs[0]).toHaveProperty("icon");
+      expect(subs[0]).toHaveProperty("unit");
+    });
+
+    it("should return empty array for invalid category", () => {
+      const subs = getSubCategories("INVALID");
+      expect(subs).toEqual([]);
     });
   });
 });

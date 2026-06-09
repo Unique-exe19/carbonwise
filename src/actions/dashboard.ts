@@ -3,7 +3,36 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIES } from "@/lib/constants/emission-factors";
+import { z } from "zod";
 
+/** Schema for validating getCarbonTrends inputs */
+const carbonTrendsSchema = z.object({
+  days: z.number().int().positive().max(365).optional(),
+});
+
+/** Schema for validating getRecentActivities inputs */
+const recentActivitiesSchema = z.object({
+  limit: z.number().int().positive().max(100).optional(),
+});
+
+/**
+ * Fetch carbon tracker dashboard statistics for the currently authenticated user.
+ * Returns aggregated carbon footprint (today, this week, this month), XP, level, 
+ * streak, and month-over-month reduction percentage.
+ *
+ * @returns {Promise<null | {
+ *   totalCO2: number;
+ *   todayCO2: number;
+ *   weekCO2: number;
+ *   monthCO2: number;
+ *   reductionPercent: number;
+ *   activitiesCount: number;
+ *   currentStreak: number;
+ *   xp: number;
+ *   level: number;
+ *   userName: string;
+ * }>} Stats object or null if not authenticated
+ */
 export async function getDashboardStats() {
   const session = await auth();
   if (!session?.user?.id) return null;
@@ -82,12 +111,24 @@ export async function getDashboardStats() {
   }
 }
 
+/**
+ * Fetch carbon emission trends grouped by date for the authenticated user.
+ *
+ * @param {number} [days=30] The number of historical days to fetch trends for (max 365)
+ * @returns {Promise<Array<{ date: string; co2: number; label: string }>>} Trend entries
+ */
 export async function getCarbonTrends(days: number = 30) {
   const session = await auth();
   if (!session?.user?.id) return [];
 
+  const validated = carbonTrendsSchema.safeParse({ days });
+  if (!validated.success) {
+    console.warn("Invalid days parameter for getCarbonTrends, falling back to 30");
+  }
+  const resolvedDays = validated.success ? (validated.data.days ?? 30) : 30;
+
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
+  startDate.setDate(startDate.getDate() - resolvedDays);
 
   try {
     const activities = await prisma.carbonActivity.findMany({
@@ -101,7 +142,7 @@ export async function getCarbonTrends(days: number = 30) {
 
     // Group by date
     const grouped: Record<string, number> = {};
-    for (let i = 0; i < days; i++) {
+    for (let i = 0; i < resolvedDays; i++) {
       const d = new Date(startDate);
       d.setDate(d.getDate() + i);
       const key = d.toISOString().split("T")[0];
@@ -129,6 +170,19 @@ export async function getCarbonTrends(days: number = 30) {
   }
 }
 
+/**
+ * Fetch carbon emissions breakdown grouped by category for the authenticated user.
+ * Returns categories with emission sums, labels, colors, icons, and percentages.
+ *
+ * @returns {Promise<Array<{
+ *   category: string;
+ *   label: string;
+ *   co2: number;
+ *   percentage: number;
+ *   color: string;
+ *   icon: string;
+ * }>>} Category breakdown list
+ */
 export async function getCategoryBreakdown() {
   const session = await auth();
   if (!session?.user?.id) return [];
@@ -163,15 +217,36 @@ export async function getCategoryBreakdown() {
   }
 }
 
+/**
+ * Fetch the most recent carbon activity entries logged by the authenticated user.
+ *
+ * @param {number} [limit=5] Maximum number of entries to return (max 100)
+ * @returns {Promise<Array<{
+ *   id: string;
+ *   category: string;
+ *   subCategory: string;
+ *   value: number;
+ *   unit: string;
+ *   co2Amount: number;
+ *   date: string;
+ *   notes: string | null;
+ * }>>} Recent activity list
+ */
 export async function getRecentActivities(limit: number = 5) {
   const session = await auth();
   if (!session?.user?.id) return [];
+
+  const validated = recentActivitiesSchema.safeParse({ limit });
+  if (!validated.success) {
+    console.warn("Invalid limit parameter for getRecentActivities, falling back to 5");
+  }
+  const resolvedLimit = validated.success ? (validated.data.limit ?? 5) : 5;
 
   try {
     const activities = await prisma.carbonActivity.findMany({
       where: { userId: session.user.id },
       orderBy: { date: "desc" },
-      take: limit,
+      take: resolvedLimit,
     });
 
     return activities.map((a: { id: string; category: string; subCategory: string; value: number; unit: string; co2Amount: number; date: Date; notes: string | null }) => ({

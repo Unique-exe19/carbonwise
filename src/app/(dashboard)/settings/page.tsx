@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,6 @@ import {
   Settings,
 } from "lucide-react";
 import { EmojiIcon } from "@/components/shared/EmojiIcon";
-import { useEffect } from "react";
 import { getProfileSettings, updateProfileSettings } from "@/actions/profile";
 
 const dietOptions = [
@@ -44,7 +43,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const [name, setName] = useState(session?.user?.name || "");
+  const [name, setName] = useState("");
   const [diet, setDiet] = useState("MIXED");
   const [transport, setTransport] = useState("CAR");
   const [notifications, setNotifications] = useState({
@@ -55,22 +54,20 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    if (session?.user?.name && !name) {
-      setName(session.user.name);
-    }
-  }, [session?.user?.name, name]);
-
-  useEffect(() => {
+    let cancelled = false;
     async function loadSettings() {
       const res = await getProfileSettings();
-      if (res.success) {
-        if (res.name) setName(res.name);
+      if (!cancelled && res.success) {
+        setName(res.name || session?.user?.name || "");
         if (res.dietType) setDiet(res.dietType);
         if (res.transportMode) setTransport(res.transportMode);
+      } else if (!cancelled && session?.user?.name) {
+        setName(session.user.name);
       }
     }
     void loadSettings();
-  }, []);
+    return () => { cancelled = true; };
+  }, [session?.user?.name]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -250,6 +247,7 @@ export default function SettingsPage() {
                 )}
                 role="switch"
                 aria-checked={enabled}
+                aria-label={`Toggle ${key.replace(/([A-Z])/g, " $1").toLowerCase()}`}
               >
                 <span
                   className={cn(
