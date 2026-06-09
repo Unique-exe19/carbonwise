@@ -44,7 +44,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState(session?.user?.name || "");
   const [diet, setDiet] = useState("MIXED");
   const [transport, setTransport] = useState("CAR");
   const [notifications, setNotifications] = useState({
@@ -53,6 +53,12 @@ export default function SettingsPage() {
     achievements: true,
     community: false,
   });
+
+  useEffect(() => {
+    if (session?.user?.name && !name) {
+      setName(session.user.name);
+    }
+  }, [session?.user?.name, name]);
 
   useEffect(() => {
     async function loadSettings() {
