@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useRef, useEffect, useState } from "react";
 import {
   Leaf, BarChart3, Sparkles, Trophy, Users, Shield, ArrowRight,
   Globe, CheckCircle2, Calculator, Brain, Target, TrendingDown,
-  ChevronRight, Star, Activity, Heart, Zap,
+  ChevronRight, Star, Activity, Heart, Zap, Loader2,
 } from "lucide-react";
 
 // ─── Animated Counter ──────────────────────────────────────────────────────
@@ -109,6 +111,8 @@ const testimonials = [
 // ─── Main Component ────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const router = useRouter();
+  const [demoLoading, setDemoLoading] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -116,6 +120,27 @@ export default function LandingPage() {
   });
   const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
+
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    try {
+      const result = await signIn("credentials", {
+        email: "demo@carbonwise.app",
+        password: "demo1234",
+        redirect: false,
+      });
+      if (result?.error) {
+        router.push("/login?error=DemoAccountNotSeeded");
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch {
+      router.push("/login");
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white overflow-hidden">
@@ -186,13 +211,18 @@ export default function LandingPage() {
                 Start Free Today
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
-              <Link
-                href="/login"
-                className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-medium border border-white/10 text-zinc-300 hover:bg-white/[0.04] hover:border-white/15 transition-all"
+              <button
+                onClick={handleDemoLogin}
+                disabled={demoLoading}
+                className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-medium border border-white/10 text-zinc-300 hover:bg-white/[0.04] hover:border-white/15 transition-all cursor-pointer disabled:opacity-50"
               >
-                <Zap className="w-4 h-4 text-amber-400" />
+                {demoLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                ) : (
+                  <Zap className="w-4 h-4 text-amber-400" />
+                )}
                 Try Demo Account
-              </Link>
+              </button>
             </div>
           </motion.div>
 
