@@ -237,6 +237,7 @@ export default function LandingPage() {
               <button
                 onClick={handleDemoLogin}
                 disabled={demoLoading}
+                aria-label="Try Demo Account"
                 className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-sm font-medium border border-white/10 text-zinc-300 hover:bg-white/[0.04] hover:border-white/15 transition-all cursor-pointer disabled:opacity-50"
               >
                 {demoLoading ? (

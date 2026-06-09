@@ -136,6 +136,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
+            aria-label="Sign in to your account"
             className={cn(
               "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold",
               "bg-gradient-to-r from-emerald-500 to-teal-600 text-white",
@@ -164,6 +165,7 @@ export default function LoginPage() {
 
         {/* Demo account */}
         <button
+          aria-label="Sign in with demo account"
           onClick={async () => {
             setLoading(true);
             setError("");

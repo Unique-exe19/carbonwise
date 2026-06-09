@@ -19,6 +19,8 @@ import {
   Settings,
 } from "lucide-react";
 import { EmojiIcon } from "@/components/shared/EmojiIcon";
+import { useEffect } from "react";
+import { getProfileSettings, updateProfileSettings } from "@/actions/profile";
 
 const dietOptions = [
   { value: "VEGAN", label: "Vegan", icon: "🌱" },
@@ -42,6 +44,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const [name, setName] = useState("");
   const [diet, setDiet] = useState("MIXED");
   const [transport, setTransport] = useState("CAR");
   const [notifications, setNotifications] = useState({
@@ -51,13 +54,35 @@ export default function SettingsPage() {
     community: false,
   });
 
+  useEffect(() => {
+    async function loadSettings() {
+      const res = await getProfileSettings();
+      if (res.success) {
+        if (res.name) setName(res.name);
+        if (res.dietType) setDiet(res.dietType);
+        if (res.transportMode) setTransport(res.transportMode);
+      }
+    }
+    loadSettings();
+  }, []);
+
   const handleSave = async () => {
     setSaving(true);
-    // Simulate save
-    await new Promise((r) => setTimeout(r, 800));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      const res = await updateProfileSettings({
+        name,
+        dietType: diet,
+        transportMode: transport,
+      });
+      if (res.success) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch (err) {
+      console.error("Save settings error:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -85,7 +110,8 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium mb-1.5 text-zinc-300">Name</label>
             <input
               type="text"
-              defaultValue={session?.user?.name || ""}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className={cn(
                 "w-full px-4 py-2.5 rounded-xl text-sm",
                 "bg-white/[0.03] border border-white/[0.08] text-zinc-100",
