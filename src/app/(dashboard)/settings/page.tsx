@@ -63,7 +63,7 @@ export default function SettingsPage() {
         if (res.transportMode) setTransport(res.transportMode);
       }
     }
-    loadSettings();
+    void loadSettings();
   }, []);
 
   const handleSave = async () => {

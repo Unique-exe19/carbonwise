@@ -215,6 +215,7 @@ export function ActivityForm({ category, onSuccess }: ActivityFormProps) {
           <button
             type="submit"
             disabled={loading || !subCategory || !value}
+            aria-label="Log activity"
             className={cn(
               "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold",
               "bg-gradient-to-r from-emerald-500 to-teal-600 text-white",

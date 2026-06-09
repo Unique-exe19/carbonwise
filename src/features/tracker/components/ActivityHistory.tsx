@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getActivities, deleteActivity } from "@/actions/activity";
 import { CATEGORIES } from "@/lib/constants/emission-factors";
 import { formatCO2, getRelativeTime, cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ export function ActivityHistory() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const limit = 10;
 
-  const loadActivities = async () => {
+  const loadActivities = useCallback(async () => {
     setLoading(true);
     const result = await getActivities({
       page,
@@ -42,14 +42,13 @@ export function ActivityHistory() {
       setTotal(result.total);
     }
     setLoading(false);
-  };
+  }, [page, filter]);
 
   useEffect(() => {
     requestAnimationFrame(() => {
-      loadActivities();
+      void loadActivities();
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, filter]);
+  }, [loadActivities]);
 
   const handleDelete = async (id: string) => {
     setDeleting(id);
