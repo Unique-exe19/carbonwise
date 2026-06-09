@@ -29,6 +29,18 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
+      if (email === "demo@carbonwise.app") {
+        try {
+          const { seedDemoUserData } = await import("@/lib/db-seed-helper");
+          await seedDemoUserData("demo-user-id");
+          return NextResponse.json(
+            { message: "Demo account seeded successfully", userId: "demo-user-id" },
+            { status: 201 },
+          );
+        } catch (err) {
+          console.error("Error seeding demo user:", err);
+        }
+      }
       return NextResponse.json(
         { error: "An account with this email already exists." },
         { status: 409 },
@@ -38,24 +50,33 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        hashedPassword,
-      },
-    });
+    let createdUserId = "";
 
-    // Create default user profile
-    await prisma.userProfile.create({
-      data: {
-        userId: user.id,
-      },
-    });
+    if (email === "demo@carbonwise.app") {
+      const { seedDemoUserData } = await import("@/lib/db-seed-helper");
+      const user = await seedDemoUserData("demo-user-id");
+      createdUserId = user.id;
+    } else {
+      // Create user
+      const user = await prisma.user.create({
+        data: {
+          name,
+          email,
+          hashedPassword,
+        },
+      });
+      createdUserId = user.id;
+
+      // Create default user profile
+      await prisma.userProfile.create({
+        data: {
+          userId: user.id,
+        },
+      });
+    }
 
     return NextResponse.json(
-      { message: "Account created successfully", userId: user.id },
+      { message: "Account created successfully", userId: createdUserId },
       { status: 201 },
     );
   } catch (error) {

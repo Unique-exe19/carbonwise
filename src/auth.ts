@@ -24,6 +24,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = credentials.email as string;
         const password = credentials.password as string;
 
+        // Bypasses database and password compare entirely for demo user
+        if (email === "demo@carbonwise.app" && password === "demo1234") {
+          try {
+            const { seedDemoUserData } = await import("@/lib/db-seed-helper");
+            await seedDemoUserData("demo-user-id");
+          } catch (err) {
+            console.error("Failed to seed demo user on demand:", err);
+          }
+          return {
+            id: "demo-user-id",
+            email: "demo@carbonwise.app",
+            name: "Demo User",
+            image: null,
+          };
+        }
+
         const user = await prisma.user.findUnique({
           where: { email },
         });
@@ -53,12 +69,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       // Fetch role from database
       if (token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true },
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
+        if (token.id === "demo-user-id") {
+          token.role = "USER";
+        } else {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true },
+          });
+          if (dbUser) {
+            token.role = dbUser.role;
+          }
         }
       }
       return token;

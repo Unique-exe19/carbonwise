@@ -8,10 +8,24 @@ async function main() {
 
   // Create demo user
   const hashedPassword = await bcrypt.hash("demo1234", 12);
-  const user = await prisma.user.upsert({
+  
+  const existingDemoUser = await prisma.user.findUnique({
     where: { email: "demo@carbonwise.app" },
-    update: {},
+  });
+  if (existingDemoUser && existingDemoUser.id !== "demo-user-id") {
+    await prisma.user.delete({ where: { id: existingDemoUser.id } });
+  }
+
+  const user = await prisma.user.upsert({
+    where: { id: "demo-user-id" },
+    update: {
+      name: "Demo User",
+      email: "demo@carbonwise.app",
+      hashedPassword,
+      role: "USER",
+    },
     create: {
+      id: "demo-user-id",
       name: "Demo User",
       email: "demo@carbonwise.app",
       hashedPassword,
