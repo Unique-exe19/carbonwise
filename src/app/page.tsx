@@ -124,11 +124,34 @@ export default function LandingPage() {
   const handleDemoLogin = async () => {
     setDemoLoading(true);
     try {
-      const result = await signIn("credentials", {
+      let result = await signIn("credentials", {
         email: "demo@carbonwise.app",
         password: "demo1234",
         redirect: false,
       });
+
+      if (result?.error) {
+        // Self-healing: Register the demo user silently if login fails
+        const regRes = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "Demo User",
+            email: "demo@carbonwise.app",
+            password: "demo1234",
+          }),
+        });
+
+        if (regRes.ok || regRes.status === 409) {
+          // Retry signing in
+          result = await signIn("credentials", {
+            email: "demo@carbonwise.app",
+            password: "demo1234",
+            redirect: false,
+          });
+        }
+      }
+
       if (result?.error) {
         router.push("/login?error=DemoAccountNotSeeded");
       } else {

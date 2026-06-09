@@ -167,18 +167,46 @@ export default function LoginPage() {
           onClick={async () => {
             setLoading(true);
             setError("");
-            const result = await signIn("credentials", {
-              email: "demo@carbonwise.app",
-              password: "demo1234",
-              redirect: false,
-            });
-            if (result?.error) {
-              setError("Demo account not set up yet. Please register first.");
-            } else {
-              router.push("/dashboard");
-              router.refresh();
+            try {
+              let result = await signIn("credentials", {
+                email: "demo@carbonwise.app",
+                password: "demo1234",
+                redirect: false,
+              });
+
+              if (result?.error) {
+                // Self-healing: Register the demo user silently if login fails
+                const regRes = await fetch("/api/auth/register", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    name: "Demo User",
+                    email: "demo@carbonwise.app",
+                    password: "demo1234",
+                  }),
+                });
+
+                if (regRes.ok || regRes.status === 409) {
+                  // Retry signing in after successful registration
+                  result = await signIn("credentials", {
+                    email: "demo@carbonwise.app",
+                    password: "demo1234",
+                    redirect: false,
+                  });
+                }
+              }
+
+              if (result?.error) {
+                setError("Failed to initialize demo session. Please try again.");
+              } else {
+                router.push("/dashboard");
+                router.refresh();
+              }
+            } catch {
+              setError("An unexpected error occurred. Please try again.");
+            } finally {
+              setLoading(false);
             }
-            setLoading(false);
           }}
           className={cn(
             "w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium",
